@@ -24,8 +24,10 @@ A complete load balancing data model integrated directly into NetBox:
 
 **Full NetBox integration** — Everything you expect from a first-class NetBox object:
 - REST API with full CRUD, filtering, and bulk operations
+- GraphQL API with filtering and pagination
 - CSV bulk import for migrating existing data from spreadsheets
 - Global search (find VIPs and members from the search bar)
+- Object cloning for quick duplication from the UI
 - Tags and custom fields for your own metadata
 - Change logging and audit trail
 - Tenant assignment for multi-team environments
@@ -101,6 +103,8 @@ The plugin is a **data model**, not a configuration management tool. It stores *
 - Manage server pools with configurable load balancing methods
 - Track pool members with weight, priority, and health status
 - Full REST API with filtering, bulk operations, and brief mode
+- GraphQL API with filtering and pagination for all models
+- Object cloning — duplicate any object from the UI with pre-filled forms
 - NetBox UI integration with navigation, search, tables, and forms
 - Tag support on all models
 - Filterset support for all model fields
@@ -195,6 +199,58 @@ curl -X POST \
   https://netbox.example.com/api/plugins/loadbalancer/pools/
 ```
 
+### GraphQL API
+
+All models are available via NetBox's GraphQL endpoint at `/graphql/`. Each model supports singular queries (fetch by ID), list queries (with filtering and pagination), and field-level filtering.
+
+#### Available Query Fields
+
+| Singular | List | Description |
+|----------|------|-------------|
+| `load_balancer` | `load_balancer_list` | Load Balancers |
+| `pool` | `pool_list` | Pools |
+| `virtual_server` | `virtual_server_list` | Virtual Servers |
+| `pool_member` | `pool_member_list` | Pool Members |
+
+#### Example: Query All Active Pool Members
+
+```graphql
+{
+  pool_member_list(filters: {status: {exact: "active"}}) {
+    id
+    name
+    port
+    weight
+    priority
+    pool {
+      name
+    }
+  }
+}
+```
+
+#### Example: Query Load Balancers at a Site
+
+```graphql
+{
+  load_balancer_list(filters: {site_id: "5"}) {
+    id
+    name
+    platform
+    status
+  }
+}
+```
+
+### Object Cloning
+
+All models support object cloning via the **Clone** button on detail views. Clicking Clone pre-fills the creation form with values from the source object, making it fast to create similar objects. The following fields are carried over during cloning:
+
+- **LoadBalancer:** platform, status, device, site, tenant, description
+- **Pool:** loadbalancer, method, protocol, description
+- **VirtualServer:** loadbalancer, protocol, status, pool, tenant, description
+- **PoolMember:** pool, weight, priority, status, description
+
 ## Development
 
 ### Running Tests
@@ -207,8 +263,9 @@ docker compose exec netbox python /opt/netbox/netbox/manage.py test netbox_loadb
 
 ### Test Coverage
 
-The test suite includes:
-- **Model tests** -- object creation, `__str__()`, `get_absolute_url()`
+The test suite includes 238 tests:
+- **Model tests** -- object creation, `__str__()`, `get_absolute_url()`, `clone()`
+- **Validation tests** -- `PoolMember.clean()` duplicate detection, null IP handling, weight/port min/max validators
 - **API tests** -- GET, POST, PATCH, DELETE, bulk operations, brief mode
 - **View tests** -- list, detail, create, edit, delete, bulk edit, bulk delete, changelog, permissions
 - **FilterSet tests** -- all model fields, search, multi-value filters
