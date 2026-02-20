@@ -278,7 +278,7 @@ class PoolMemberBulkEditForm(NetBoxModelBulkEditForm):
     """
     model = PoolMember
     status = forms.ChoiceField(choices=PoolMemberStatusChoices, required=False)
-    weight = forms.IntegerField(min_value=0, required=False)
+    weight = forms.IntegerField(min_value=1, required=False)
     priority = forms.IntegerField(min_value=0, required=False)
     description = forms.CharField(max_length=500, required=False)
 

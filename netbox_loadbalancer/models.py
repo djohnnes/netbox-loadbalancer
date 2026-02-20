@@ -95,6 +95,8 @@ class LoadBalancer(NetBoxModel):
     )
     description = models.CharField(max_length=500, blank=True)
 
+    clone_fields = ('platform', 'status', 'device', 'site', 'tenant', 'description')
+
     class Meta:
         ordering = ['name']
 
@@ -137,6 +139,8 @@ class Pool(NetBoxModel):
         default=PoolProtocolChoices.PROTOCOL_HTTP,
     )
     description = models.CharField(max_length=500, blank=True)
+
+    clone_fields = ('loadbalancer', 'method', 'protocol', 'description')
 
     class Meta:
         ordering = ['loadbalancer', 'name']
@@ -210,6 +214,8 @@ class VirtualServer(NetBoxModel):
     )
     description = models.CharField(max_length=500, blank=True)
 
+    clone_fields = ('loadbalancer', 'protocol', 'status', 'pool', 'tenant', 'description')
+
     class Meta:
         ordering = ['loadbalancer', 'name']
         unique_together = ['loadbalancer', 'name', 'port', 'protocol']
@@ -270,7 +276,7 @@ class PoolMember(NetBoxModel):
     )
     weight = models.PositiveIntegerField(
         default=1,
-        validators=[MaxValueValidator(65535)],
+        validators=[MinValueValidator(1), MaxValueValidator(65535)],
     )
     priority = models.PositiveIntegerField(default=0)
     status = models.CharField(
@@ -279,6 +285,8 @@ class PoolMember(NetBoxModel):
         default=PoolMemberStatusChoices.STATUS_ACTIVE,
     )
     description = models.CharField(max_length=500, blank=True)
+
+    clone_fields = ('pool', 'weight', 'priority', 'status', 'description')
 
     class Meta:
         ordering = ['pool', 'name']
