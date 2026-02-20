@@ -37,6 +37,63 @@ A complete load balancing data model integrated directly into NetBox:
 - Track planned vs active load balancer deployments
 - Hand off load balancer documentation to new team members with zero tribal knowledge
 
+## Network as Code
+
+This plugin turns load balancer configuration into structured, API-accessible data inside NetBox — making it a natural fit for Network as Code (NaC) workflows.
+
+### The Automation Loop
+
+```
+Git repo (desired state)
+    |   CI/CD pipeline syncs to NetBox via REST API
+    v
+NetBox + netbox_loadbalancer (source of truth)
+    |   Ansible/Terraform/Nornir reads from NetBox API
+    v
+Actual devices (F5, HAProxy, NGINX, cloud LBs)
+    |   Drift detection compares actual vs intended
+    v
+Git repo (PR to fix drift)
+```
+
+### API-Driven Config Generation
+
+Automation tools query the NetBox API to build vendor-specific configurations. The same source data can be templated into F5 iRules, HAProxy backends, or NGINX upstreams:
+
+```bash
+# Pull all active pool members for a pool, feed into an Ansible playbook
+curl -s -H "Authorization: Token $NETBOX_TOKEN" \
+  https://netbox.example.com/api/plugins/loadbalancer/pool-members/?pool_id=5&status=active
+```
+
+### GitOps Workflow
+
+Define desired load balancer state as YAML/JSON in a git repo, then let a CI pipeline push it to NetBox via the bulk API:
+- **PR review** = change approval
+- **Merge** = sync to NetBox
+- **Post-merge job** = configure actual devices from NetBox data
+- **NetBox change log** = audit trail
+
+### Drift Detection
+
+Compare what NetBox says (intended state) with what's actually configured on the device (actual state). If a pool member was added manually to an F5 but not in NetBox, your automation flags the drift.
+
+### Cross-Domain Correlation
+
+Because the plugin links to NetBox's native objects (devices, IPs, sites, tenants), automation can answer questions that span domains:
+- "Generate configs for all load balancers at site X" (site FK)
+- "What VIPs use this IP?" (ip_address FK)
+- "Drain all pool members running on this device before patching" (device FK)
+- "Show me all load balancing resources owned by tenant Y" (tenant FK)
+
+### Idempotent State Management
+
+The REST API supports both PUT (full replace) and PATCH (partial update), making it safe to run automation repeatedly. The unique constraints on the models (pool name per LB, member IP+port per pool) prevent duplicate entries.
+
+### What It Doesn't Do (By Design)
+
+The plugin is a **data model**, not a configuration management tool. It stores *intended state* — it doesn't push configs to devices. That's the job of automation tools (Ansible, Terraform, Nornir) that read from the API. This separation of concerns is intentional: NetBox is the "what should exist" layer, automation is the "make it so" layer.
+
 ## Features
 
 - Model and track load balancers across multiple platforms (F5, HAProxy, Citrix, NGINX, AWS, Azure)
