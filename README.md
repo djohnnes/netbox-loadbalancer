@@ -4,6 +4,39 @@ A [NetBox](https://github.com/netbox-community/netbox) plugin for managing load 
 
 **Version:** 0.1.0
 
+## Why This Plugin?
+
+### The Problem
+
+NetBox natively tracks devices, IPs, sites, and tenants — but has **no concept of load balancing**. Teams end up documenting load balancer configurations in spreadsheets, wiki pages, or vendor-specific management tools, creating information silos that are disconnected from the rest of their network source of truth.
+
+### What This Plugin Adds
+
+A complete load balancing data model integrated directly into NetBox:
+
+**Single source of truth** — Load balancers, VIPs, pools, and members live alongside your devices, IPs, and sites. No more cross-referencing spreadsheets with NetBox to find which IP is a VIP or which device runs the load balancer.
+
+**Relationship visibility** — You can trace the full traffic path: which virtual server listens on which VIP, which pool it routes to, and which backend members serve the traffic. Foreign key links to existing NetBox objects (devices, IPs, sites, tenants) tie load balancing into your broader infrastructure map.
+
+**Operational awareness** — Status tracking (active, planned, maintenance, drain, disabled, decommissioned) across all objects gives teams a clear picture of what's in production, what's being deployed, and what's being retired.
+
+**Multi-vendor support** — Platform-agnostic model covers F5, HAProxy, Citrix, NGINX, AWS ALB, Azure LB, and others. You document the logical configuration regardless of vendor, making it useful for mixed environments.
+
+**Full NetBox integration** — Everything you expect from a first-class NetBox object:
+- REST API with full CRUD, filtering, and bulk operations
+- CSV bulk import for migrating existing data from spreadsheets
+- Global search (find VIPs and members from the search bar)
+- Tags and custom fields for your own metadata
+- Change logging and audit trail
+- Tenant assignment for multi-team environments
+
+**Day-to-day use cases:**
+- Quickly answer "what backends serve this VIP?" or "what VIPs does this server sit behind?"
+- Audit all load balancers at a site before a maintenance window
+- Bulk-drain pool members on a server before patching
+- Track planned vs active load balancer deployments
+- Hand off load balancer documentation to new team members with zero tribal knowledge
+
 ## Features
 
 - Model and track load balancers across multiple platforms (F5, HAProxy, Citrix, NGINX, AWS, Azure)
