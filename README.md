@@ -255,10 +255,19 @@ All models support object cloning via the **Clone** button on detail views. Clic
 
 ### Running Tests
 
-From the NetBox Docker environment:
+Tests require a working NetBox installation because they depend on NetBox's database, core models (Device, IPAddress, Site, Tenant), and test framework. You cannot run them standalone with `pytest` or `python -m unittest` — they must be executed through NetBox's `manage.py test` runner.
+
+**Docker-based NetBox:**
 
 ```bash
 docker compose exec netbox python /opt/netbox/netbox/manage.py test netbox_loadbalancer --verbosity=2
+```
+
+**Bare-metal NetBox:**
+
+```bash
+cd /opt/netbox/netbox
+python manage.py test netbox_loadbalancer --verbosity=2
 ```
 
 ### Test Coverage
