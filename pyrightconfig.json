@@ -1,0 +1,9 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    ".netbox-stubs"
+  ],
+  "reportMissingImports": "warning",
+  "pythonVersion": "3.12"
+}
