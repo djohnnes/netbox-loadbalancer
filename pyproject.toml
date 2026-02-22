@@ -26,10 +26,10 @@ classifiers = [
 keywords = ["netbox", "plugin", "load-balancer", "networking"]
 
 [project.urls]
-Homepage = "https://github.com/davidjohnnes/netbox-loadbalancer"
-Repository = "https://github.com/davidjohnnes/netbox-loadbalancer"
-Issues = "https://github.com/davidjohnnes/netbox-loadbalancer/issues"
-Changelog = "https://github.com/davidjohnnes/netbox-loadbalancer/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/djohnnes/netbox-loadbalancer"
+Repository = "https://github.com/djohnnes/netbox-loadbalancer"
+Issues = "https://github.com/djohnnes/netbox-loadbalancer/issues"
+Changelog = "https://github.com/djohnnes/netbox-loadbalancer/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["netbox_loadbalancer*"]
