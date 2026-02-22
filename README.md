@@ -2,7 +2,7 @@
 
 A [NetBox](https://github.com/netbox-community/netbox) plugin for managing load balancers, virtual servers, pools, and pool members.
 
-**Version:** 0.1.0
+**Version:** 0.1.1
 
 ## Why This Plugin?
 
