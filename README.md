@@ -120,7 +120,7 @@ The plugin is a **data model**, not a configuration management tool. It stores *
 1. Add the plugin to your NetBox `local_requirements.txt` or install it:
 
 ```bash
-pip install netbox-loadbalancer
+pip install netbox-loadbalancer-plugin
 ```
 
 2. Enable the plugin in `configuration.py`:
