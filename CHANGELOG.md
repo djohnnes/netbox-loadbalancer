@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.2] - 2026-02-23
+
+### Added
+
+- Comprehensive docstrings to all test files (test_models, test_filtersets, test_views, test_api)
+
+### Fixed
+
+- Migration dependencies for NetBox v4.5.1 compatibility
+
 ## [0.1.1] - 2026-02-22
 
 ### Added
