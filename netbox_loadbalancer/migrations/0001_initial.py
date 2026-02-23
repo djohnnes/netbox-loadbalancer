@@ -12,10 +12,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('dcim', '0226_add_mptt_tree_indexes'),
+        ('dcim', '0225_gfk_indexes'),
         ('extras', '0134_owner'),
         ('ipam', '0086_gfk_indexes'),
-        ('tenancy', '0023_add_mptt_tree_indexes'),
+        ('tenancy', '0022_add_comments_to_organizationalmodel'),
     ]
 
     operations = [

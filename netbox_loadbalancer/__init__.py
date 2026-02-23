@@ -24,7 +24,7 @@ class NetBoxLoadBalancerConfig(PluginConfig):
     name = 'netbox_loadbalancer'
     verbose_name = 'Load Balancer'
     description = 'Manage load balancers, virtual servers, pools, and pool members'
-    version = '0.1.1'
+    version = '0.1.2'
     author = 'David Johnnes'
     author_email = 'david.johnnes@gmail.com'
     base_url = 'loadbalancer'
