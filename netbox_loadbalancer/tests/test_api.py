@@ -1,3 +1,39 @@
+"""
+Tests for the ``netbox_loadbalancer`` plugin's REST API endpoints.
+
+This module validates the full CRUD lifecycle (GET single, GET list, POST
+create, PATCH/PUT update, DELETE) for every model exposed through the plugin's
+API: ``LoadBalancer``, ``Pool``, ``VirtualServer``, and ``PoolMember``.
+
+Like the view tests, these classes leverage NetBox's built-in test
+infrastructure — in this case, the ``APIViewTestCases`` mixin classes from
+``utilities.testing``.  Each mixin provides a complete set of tests for a
+particular API operation (e.g. ``GetObjectViewTestCase`` tests ``GET
+/api/.../{{id}}/``, ``CreateObjectViewTestCase`` tests ``POST /api/.../``).
+The test class only needs to provide:
+
+* ``model`` – the Django model under test.
+* ``view_namespace`` – the DRF router namespace, e.g.
+  ``'plugins-api:netbox_loadbalancer'``.
+* ``brief_fields`` – the list of fields returned in "brief" serialisation mode
+  (used by ``?brief=true`` queries).
+* ``setUpTestData()`` – creates three existing objects (for GET / DELETE tests)
+  plus ``create_data`` (a list of dicts for POST tests) and
+  ``bulk_update_data`` (a dict for PATCH bulk-update tests).
+
+**Testing framework:** NetBox's ``APIViewTestCases`` mixins extend Django REST
+Framework's ``APITestCase``, handling token authentication, content-type
+negotiation, permission checks, and response status-code assertions
+automatically.
+
+**Running these tests:**
+
+.. code-block:: bash
+
+   docker compose exec netbox python /opt/netbox/netbox/manage.py test \\
+       netbox_loadbalancer.tests.test_api --verbosity=2
+"""
+
 from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
 from ipam.models import IPAddress
 from tenancy.models import Tenant
@@ -13,12 +49,24 @@ class LoadBalancerAPITest(
     APIViewTestCases.UpdateObjectViewTestCase,
     APIViewTestCases.DeleteObjectViewTestCase,
 ):
+    """
+    API tests for the ``LoadBalancer`` model.
+
+    Inherits five ``APIViewTestCases`` mixins that collectively test GET
+    (single + list), POST (create), PATCH/PUT (update), and DELETE operations
+    against the ``/api/plugins/loadbalancer/loadbalancers/`` endpoint.
+    """
+
     model = LoadBalancer
     view_namespace = 'plugins-api:netbox_loadbalancer'
     brief_fields = ['display', 'id', 'name', 'url']
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create three ``LoadBalancer`` instances for read / delete tests, plus
+        ``create_data`` for POST tests and ``bulk_update_data`` for PATCH tests.
+        """
         site = Site.objects.create(name='API Site', slug='api-site')
 
         loadbalancers = (
@@ -45,12 +93,23 @@ class PoolAPITest(
     APIViewTestCases.UpdateObjectViewTestCase,
     APIViewTestCases.DeleteObjectViewTestCase,
 ):
+    """
+    API tests for the ``Pool`` model.
+
+    Inherits the same five ``APIViewTestCases`` mixins to test CRUD operations
+    against the ``/api/plugins/loadbalancer/pools/`` endpoint.
+    """
+
     model = Pool
     view_namespace = 'plugins-api:netbox_loadbalancer'
     brief_fields = ['display', 'id', 'name', 'url']
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a parent ``LoadBalancer``, three ``Pool`` instances, and the
+        ``create_data`` / ``bulk_update_data`` used by the API test mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-PoolAPI', platform='f5')
 
         pools = (
@@ -77,12 +136,23 @@ class VirtualServerAPITest(
     APIViewTestCases.UpdateObjectViewTestCase,
     APIViewTestCases.DeleteObjectViewTestCase,
 ):
+    """
+    API tests for the ``VirtualServer`` model.
+
+    Inherits the same five ``APIViewTestCases`` mixins to test CRUD operations
+    against the ``/api/plugins/loadbalancer/virtual-servers/`` endpoint.
+    """
+
     model = VirtualServer
     view_namespace = 'plugins-api:netbox_loadbalancer'
     brief_fields = ['display', 'id', 'name', 'url']
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a parent ``LoadBalancer``, three ``VirtualServer`` instances, and
+        the ``create_data`` / ``bulk_update_data`` used by the API test mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-VSAPI', platform='f5')
 
         virtual_servers = (
@@ -109,12 +179,24 @@ class PoolMemberAPITest(
     APIViewTestCases.UpdateObjectViewTestCase,
     APIViewTestCases.DeleteObjectViewTestCase,
 ):
+    """
+    API tests for the ``PoolMember`` model.
+
+    Inherits the same five ``APIViewTestCases`` mixins to test CRUD operations
+    against the ``/api/plugins/loadbalancer/pool-members/`` endpoint.
+    """
+
     model = PoolMember
     view_namespace = 'plugins-api:netbox_loadbalancer'
     brief_fields = ['display', 'id', 'name', 'url']
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a ``LoadBalancer`` → ``Pool`` hierarchy, three ``PoolMember``
+        instances, and the ``create_data`` / ``bulk_update_data`` used by the
+        API test mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-PMAPI', platform='f5')
         pool = Pool.objects.create(name='Pool-PMAPI', loadbalancer=lb)
 

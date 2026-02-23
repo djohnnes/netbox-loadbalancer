@@ -1,3 +1,38 @@
+"""
+Tests for the ``netbox_loadbalancer`` plugin's UI views.
+
+This module exercises the standard NetBox web-UI views (list, detail, create,
+edit, delete, bulk-import, bulk-edit, bulk-delete, and changelog) for every
+model in the plugin: ``LoadBalancer``, ``Pool``, ``VirtualServer``, and
+``PoolMember``.
+
+Rather than writing individual view tests from scratch, the plugin leverages
+NetBox's built-in ``ViewTestCases`` mixin classes from
+``utilities.testing``.  Each mixin provides a complete set of tests for a
+particular view type (e.g. ``GetObjectViewTestCase`` tests the detail view,
+``CreateObjectViewTestCase`` tests the create form, etc.).  The test class
+only needs to provide:
+
+* ``model`` – the Django model under test.
+* ``_get_base_url()`` – returns the URL namespace pattern used by the plugin's
+  ``urlpatterns``, e.g. ``'plugins:netbox_loadbalancer:loadbalancer_{}'``.
+* ``setUpTestData()`` – creates three existing objects (for list/detail/delete
+  tests) plus ``form_data`` (for create/edit), ``csv_data`` and
+  ``csv_update_data`` (for bulk-import), and ``bulk_edit_data`` (for
+  bulk-edit).
+
+**Testing framework:** NetBox's ``ViewTestCases`` mixins extend Django's
+``TestCase`` and handle authentication, CSRF, permission checks, and response
+status-code assertions automatically.
+
+**Running these tests:**
+
+.. code-block:: bash
+
+   docker compose exec netbox python /opt/netbox/netbox/manage.py test \\
+       netbox_loadbalancer.tests.test_views --verbosity=2
+"""
+
 from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
 from ipam.models import IPAddress
 from tenancy.models import Tenant
@@ -17,13 +52,26 @@ class LoadBalancerViewTest(
     ViewTestCases.BulkEditObjectsViewTestCase,
     ViewTestCases.BulkDeleteObjectsViewTestCase,
 ):
+    """
+    View tests for the ``LoadBalancer`` model.
+
+    Inherits nine ``ViewTestCases`` mixins that collectively test every
+    standard NetBox UI operation (GET detail, GET list, POST create, POST edit,
+    POST delete, bulk import via CSV, bulk edit, bulk delete, and changelog).
+    """
+
     model = LoadBalancer
 
     def _get_base_url(self):
+        """Return the URL namespace pattern for ``LoadBalancer`` views."""
         return 'plugins:netbox_loadbalancer:loadbalancer_{}'
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create three ``LoadBalancer`` instances plus form, CSV, and bulk-edit
+        data used by the ``ViewTestCases`` mixins.
+        """
         site = Site.objects.create(name='VT Site', slug='vt-site')
 
         LoadBalancer.objects.create(name='LB-VT-1', platform='f5', status='active', site=site)
@@ -66,13 +114,25 @@ class PoolViewTest(
     ViewTestCases.BulkEditObjectsViewTestCase,
     ViewTestCases.BulkDeleteObjectsViewTestCase,
 ):
+    """
+    View tests for the ``Pool`` model.
+
+    Inherits the same nine ``ViewTestCases`` mixins as ``LoadBalancerViewTest``
+    to cover all standard CRUD and bulk operations for pools.
+    """
+
     model = Pool
 
     def _get_base_url(self):
+        """Return the URL namespace pattern for ``Pool`` views."""
         return 'plugins:netbox_loadbalancer:pool_{}'
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a parent ``LoadBalancer``, three ``Pool`` instances, and the
+        form / CSV / bulk-edit data consumed by the ``ViewTestCases`` mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-PoolVT', platform='f5')
 
         Pool.objects.create(name='Pool-VT-1', loadbalancer=lb, method='round-robin', protocol='http')
@@ -115,13 +175,25 @@ class VirtualServerViewTest(
     ViewTestCases.BulkEditObjectsViewTestCase,
     ViewTestCases.BulkDeleteObjectsViewTestCase,
 ):
+    """
+    View tests for the ``VirtualServer`` model.
+
+    Inherits the same nine ``ViewTestCases`` mixins to cover all standard CRUD
+    and bulk operations for virtual servers.
+    """
+
     model = VirtualServer
 
     def _get_base_url(self):
+        """Return the URL namespace pattern for ``VirtualServer`` views."""
         return 'plugins:netbox_loadbalancer:virtualserver_{}'
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a parent ``LoadBalancer``, three ``VirtualServer`` instances, and
+        the form / CSV / bulk-edit data consumed by the ``ViewTestCases`` mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-VSVT', platform='f5')
 
         VirtualServer.objects.create(
@@ -171,13 +243,26 @@ class PoolMemberViewTest(
     ViewTestCases.BulkEditObjectsViewTestCase,
     ViewTestCases.BulkDeleteObjectsViewTestCase,
 ):
+    """
+    View tests for the ``PoolMember`` model.
+
+    Inherits the same nine ``ViewTestCases`` mixins to cover all standard CRUD
+    and bulk operations for pool members.
+    """
+
     model = PoolMember
 
     def _get_base_url(self):
+        """Return the URL namespace pattern for ``PoolMember`` views."""
         return 'plugins:netbox_loadbalancer:poolmember_{}'
 
     @classmethod
     def setUpTestData(cls):
+        """
+        Create a ``LoadBalancer`` → ``Pool`` hierarchy, three ``PoolMember``
+        instances, and the form / CSV / bulk-edit data consumed by the
+        ``ViewTestCases`` mixins.
+        """
         lb = LoadBalancer.objects.create(name='LB-PMVT', platform='f5')
         pool = Pool.objects.create(name='Pool-PMVT', loadbalancer=lb)
 

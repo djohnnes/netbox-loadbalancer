@@ -1,3 +1,34 @@
+"""
+Tests for the ``netbox_loadbalancer`` plugin's Django models.
+
+This module verifies the core data-model layer for every model defined in
+``netbox_loadbalancer.models``: ``LoadBalancer``, ``Pool``, ``VirtualServer``,
+and ``PoolMember``.  Each model's test class exercises:
+
+* **CRUD operations** – creating an instance with all required (and optional)
+  fields, then asserting the saved values match.
+* **String representation** – ensuring ``__str__`` returns the expected
+  human-readable label used in the NetBox UI.
+* **Absolute URL** – confirming ``get_absolute_url`` generates a URL that
+  contains the correct path prefix and primary key, which is required for
+  NetBox's generic detail/edit views to work.
+
+The module also includes ``PoolMemberCleanTest`` for ``PoolMember.clean()``
+validation logic and ``CloneFieldsTest`` for the ``clone_fields`` mechanism
+used by NetBox's "clone" action.
+
+**Testing framework:** All tests use Django's standard ``TestCase``, which
+wraps each test in a transaction and rolls it back automatically.  Shared
+fixture data is created once per class via the ``setUpTestData`` classmethod.
+
+**Running these tests:**
+
+.. code-block:: bash
+
+   docker compose exec netbox python /opt/netbox/netbox/manage.py test \\
+       netbox_loadbalancer.tests.test_models --verbosity=2
+"""
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
@@ -9,9 +40,22 @@ from netbox_loadbalancer.models import LoadBalancer, Pool, VirtualServer, PoolMe
 
 
 class LoadBalancerModelTest(TestCase):
+    """
+    Tests for the ``LoadBalancer`` model.
+
+    ``LoadBalancer`` is the top-level object representing a physical or virtual
+    load-balancing appliance.  It has required fields (``name``, ``platform``)
+    and optional foreign-key relationships to ``Site``, ``Tenant``,
+    ``Device``, and ``IPAddress``.
+
+    ``setUpTestData`` creates the prerequisite objects (``Site``, ``Device``,
+    ``Tenant``, ``IPAddress``) that are reused across all test methods in this
+    class.
+    """
 
     @classmethod
     def setUpTestData(cls):
+        """Create shared fixture objects required by ``LoadBalancer`` foreign keys."""
         site = Site.objects.create(name='Test Site', slug='test-site')
         manufacturer = Manufacturer.objects.create(name='Test Mfg', slug='test-mfg')
         device_type = DeviceType.objects.create(
@@ -26,6 +70,7 @@ class LoadBalancerModelTest(TestCase):
         cls.ip = IPAddress.objects.create(address='10.0.0.1/24')
 
     def test_create_loadbalancer(self):
+        """Verify that a ``LoadBalancer`` can be created with all fields and persisted correctly."""
         lb = LoadBalancer.objects.create(
             name='LB-01',
             platform='f5',
@@ -44,10 +89,12 @@ class LoadBalancerModelTest(TestCase):
         self.assertEqual(lb.management_ip, self.ip)
 
     def test_str(self):
+        """``__str__`` should return the load balancer's name."""
         lb = LoadBalancer.objects.create(name='LB-02', platform='f5')
         self.assertEqual(str(lb), 'LB-02')
 
     def test_get_absolute_url(self):
+        """``get_absolute_url`` should return a URL containing the model path and primary key."""
         lb = LoadBalancer.objects.create(name='LB-03', platform='f5')
         url = lb.get_absolute_url()
         self.assertIn('/loadbalancer/loadbalancers/', url)
@@ -55,12 +102,24 @@ class LoadBalancerModelTest(TestCase):
 
 
 class PoolModelTest(TestCase):
+    """
+    Tests for the ``Pool`` model.
+
+    A ``Pool`` belongs to a ``LoadBalancer`` and groups backend members that
+    receive traffic according to a configurable load-balancing ``method``
+    (e.g. round-robin, least-connections) and ``protocol``.
+
+    ``setUpTestData`` creates a single ``LoadBalancer`` that serves as the
+    parent for all ``Pool`` instances created in this class.
+    """
 
     @classmethod
     def setUpTestData(cls):
+        """Create a parent ``LoadBalancer`` used by every pool test."""
         cls.lb = LoadBalancer.objects.create(name='LB-Pool-Test', platform='f5')
 
     def test_create_pool(self):
+        """Verify that a ``Pool`` can be created with method and protocol set correctly."""
         pool = Pool.objects.create(
             name='Pool-01',
             loadbalancer=self.lb,
@@ -73,10 +132,12 @@ class PoolModelTest(TestCase):
         self.assertEqual(pool.protocol, 'http')
 
     def test_str(self):
+        """``__str__`` should return the pool's name."""
         pool = Pool.objects.create(name='Pool-02', loadbalancer=self.lb)
         self.assertEqual(str(pool), 'Pool-02')
 
     def test_get_absolute_url(self):
+        """``get_absolute_url`` should return a URL containing the pool path and primary key."""
         pool = Pool.objects.create(name='Pool-03', loadbalancer=self.lb)
         url = pool.get_absolute_url()
         self.assertIn('/loadbalancer/pools/', url)
@@ -84,12 +145,23 @@ class PoolModelTest(TestCase):
 
 
 class VirtualServerModelTest(TestCase):
+    """
+    Tests for the ``VirtualServer`` model.
+
+    A ``VirtualServer`` represents a frontend listener bound to a specific
+    ``port`` and ``protocol`` on a ``LoadBalancer``.  Traffic arriving at the
+    virtual server is forwarded to its associated ``Pool``.
+
+    ``setUpTestData`` creates a parent ``LoadBalancer`` reused by all tests.
+    """
 
     @classmethod
     def setUpTestData(cls):
+        """Create a parent ``LoadBalancer`` used by every virtual-server test."""
         cls.lb = LoadBalancer.objects.create(name='LB-VS-Test', platform='f5')
 
     def test_create_virtual_server(self):
+        """Verify that a ``VirtualServer`` can be created with port, protocol, and status."""
         vs = VirtualServer.objects.create(
             name='VS-01',
             loadbalancer=self.lb,
@@ -103,6 +175,7 @@ class VirtualServerModelTest(TestCase):
         self.assertEqual(vs.status, 'active')
 
     def test_str(self):
+        """``__str__`` should return the name with protocol and port, e.g. ``VS-02 (HTTPS/443)``."""
         vs = VirtualServer.objects.create(
             name='VS-02',
             loadbalancer=self.lb,
@@ -112,6 +185,7 @@ class VirtualServerModelTest(TestCase):
         self.assertEqual(str(vs), 'VS-02 (HTTPS/443)')
 
     def test_get_absolute_url(self):
+        """``get_absolute_url`` should return a URL containing the virtual-server path and primary key."""
         vs = VirtualServer.objects.create(
             name='VS-03',
             loadbalancer=self.lb,
@@ -123,13 +197,25 @@ class VirtualServerModelTest(TestCase):
 
 
 class PoolMemberModelTest(TestCase):
+    """
+    Tests for the ``PoolMember`` model.
+
+    A ``PoolMember`` is a backend server within a ``Pool``.  Each member has a
+    ``port``, an optional ``weight`` and ``priority`` for traffic distribution,
+    and a ``status`` indicating whether it is actively receiving traffic.
+
+    ``setUpTestData`` creates a ``LoadBalancer`` → ``Pool`` hierarchy reused
+    across all member tests.
+    """
 
     @classmethod
     def setUpTestData(cls):
+        """Create a ``LoadBalancer`` and ``Pool`` that serve as parents for pool-member tests."""
         lb = LoadBalancer.objects.create(name='LB-PM-Test', platform='f5')
         cls.pool = Pool.objects.create(name='Pool-PM-Test', loadbalancer=lb)
 
     def test_create_pool_member(self):
+        """Verify that a ``PoolMember`` can be created with weight, priority, and status."""
         pm = PoolMember.objects.create(
             name='Member-01',
             pool=self.pool,
@@ -145,6 +231,7 @@ class PoolMemberModelTest(TestCase):
         self.assertEqual(pm.priority, 1)
 
     def test_str(self):
+        """``__str__`` should return ``name:port``, e.g. ``Member-02:9090``."""
         pm = PoolMember.objects.create(
             name='Member-02',
             pool=self.pool,
@@ -153,6 +240,7 @@ class PoolMemberModelTest(TestCase):
         self.assertEqual(str(pm), 'Member-02:9090')
 
     def test_get_absolute_url(self):
+        """``get_absolute_url`` should return a URL containing the pool-member path and primary key."""
         pm = PoolMember.objects.create(
             name='Member-03',
             pool=self.pool,
@@ -249,6 +337,7 @@ class CloneFieldsTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        """Create a ``LoadBalancer`` and ``Pool`` whose cloned attributes are verified below."""
         cls.lb = LoadBalancer.objects.create(
             name='LB-Clone', platform='f5', status='active',
         )
@@ -257,17 +346,20 @@ class CloneFieldsTest(TestCase):
         )
 
     def test_loadbalancer_clone(self):
+        """``LoadBalancer.clone()`` should carry over ``platform`` and ``status``."""
         attrs = self.lb.clone()
         self.assertEqual(attrs['platform'], 'f5')
         self.assertEqual(attrs['status'], 'active')
 
     def test_pool_clone(self):
+        """``Pool.clone()`` should carry over ``loadbalancer``, ``method``, and ``protocol``."""
         attrs = self.pool.clone()
         self.assertEqual(attrs['loadbalancer'], self.lb.pk)
         self.assertEqual(attrs['method'], 'round-robin')
         self.assertEqual(attrs['protocol'], 'http')
 
     def test_virtualserver_clone(self):
+        """``VirtualServer.clone()`` should carry over ``loadbalancer``, ``protocol``, and ``status``."""
         vs = VirtualServer.objects.create(
             name='VS-Clone', loadbalancer=self.lb, port=443, protocol='https', status='active',
         )
@@ -277,6 +369,7 @@ class CloneFieldsTest(TestCase):
         self.assertEqual(attrs['status'], 'active')
 
     def test_poolmember_clone(self):
+        """``PoolMember.clone()`` should carry over ``pool``, ``weight``, ``priority``, and ``status``."""
         pm = PoolMember.objects.create(
             name='PM-Clone', pool=self.pool, port=8080, weight=5, priority=2, status='drain',
         )
